@@ -1,0 +1,964 @@
+Author
+Piyusha Sharma
+BTECH ECE
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GNSS Analyser | Positioning Intelligence</title>
+
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+:root {
+  --bg:#08111f;
+  --panel:#111e30;
+  --panel2:#16253a;
+  --border:#263951;
+  --text:#edf5ff;
+  --muted:#91a5bd;
+  --cyan:#43d9ee;
+  --blue:#6798ff;
+  --green:#45d6a0;
+  --orange:#ffb866;
+  --red:#ff7185;
+  --shadow:0 12px 32px rgba(0,0,0,.18);
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,Segoe UI,Arial,sans-serif;font-size:14px;
+}
+button,input{font:inherit}
+button{
+  border:1px solid var(--border);background:var(--panel2);
+  color:var(--text);padding:10px 13px;border-radius:9px;
+  cursor:pointer;transition:.2s;
+}
+button:hover{border-color:var(--cyan);transform:translateY(-1px)}
+button.primary{background:var(--cyan);color:#071421;border-color:var(--cyan);font-weight:700}
+button:disabled{opacity:.4;cursor:not-allowed;transform:none}
+input[type=file]{
+  max-width:100%;color:var(--muted);font-size:12px;
+}
+input[type=file]::file-selector-button{
+  background:var(--panel2);color:var(--text);
+  border:1px solid var(--border);border-radius:7px;padding:8px;
+  margin-right:8px;cursor:pointer;
+}
+.app{max-width:1600px;margin:auto;padding:24px}
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;flex-wrap:wrap;margin-bottom:24px;
+}
+.brand{display:flex;align-items:center;gap:13px}
+.logo{
+  display:grid;place-items:center;width:48px;height:48px;
+  border-radius:14px;background:linear-gradient(140deg,#43d9ee,#6798ff);
+  color:#061321;font-size:23px;font-weight:900;
+}
+h1{font-size:25px;margin:0 0 5px;letter-spacing:-.7px}
+.subtitle{color:var(--muted);font-size:12px}
+.header-actions{display:flex;gap:9px;flex-wrap:wrap}
+.status{
+  display:inline-flex;align-items:center;gap:7px;color:var(--green);
+  background:#14352f;padding:8px 11px;border-radius:20px;font-size:12px;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor}
+nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+nav button{background:transparent;color:var(--muted)}
+nav button.active{background:var(--panel2);color:var(--cyan);border-color:#3d6479}
+.section{scroll-margin-top:15px;margin-bottom:23px}
+.section-heading{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;flex-wrap:wrap;margin:0 0 13px;
+}
+h2{font-size:17px;margin:0;letter-spacing:-.2px}
+h3{font-size:13px;margin:0 0 6px}
+.section-desc{color:var(--muted);font-size:12px;margin-top:5px}
+.grid{display:grid;gap:16px}
+.metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+.panel,.metric{
+  background:var(--panel);border:1px solid var(--border);
+  border-radius:15px;box-shadow:var(--shadow);min-width:0;
+}
+.metric{padding:18px}
+.metric-label{font-size:12px;color:var(--muted);margin-bottom:12px}
+.metric-value{font-size:27px;font-weight:750;letter-spacing:-.8px;overflow-wrap:anywhere}
+.metric-foot{font-size:11px;color:var(--muted);margin-top:8px}
+.metric-icon{float:right;font-size:19px;color:var(--cyan)}
+.panel{padding:18px}
+.panel-top{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:15px}
+.tag{
+  border:1px solid var(--border);border-radius:20px;padding:5px 8px;
+  color:var(--muted);font-size:10px;white-space:nowrap;
+}
+.uploads{grid-template-columns:repeat(2,minmax(0,1fr))}
+.upload-box{
+  padding:17px;border:1px dashed #3a536d;border-radius:12px;
+  background:rgba(22,37,58,.5);min-width:0;
+}
+.upload-box p{color:var(--muted);font-size:12px;line-height:1.6}
+.upload-box label{display:block;margin:12px 0 7px;font-weight:650}
+.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+.notice{
+  padding:12px 14px;border:1px solid var(--border);
+  background:var(--panel2);border-radius:10px;
+  color:var(--muted);font-size:12px;line-height:1.65;margin-bottom:15px;
+}
+.notice.error{border-color:#7c3445;color:#ffb7c1}
+.notice.success{border-color:#286a5a;color:#8ce9c6}
+.chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.chart-box{height:290px;position:relative;min-width:0}
+.chart-box.tall{height:340px}
+#map{height:380px;border-radius:11px;overflow:hidden;background:#0a1625}
+#skyCanvas{width:100%;height:340px;display:block}
+.table-wrap{overflow:auto;max-height:420px;border-radius:9px}
+table{width:100%;border-collapse:collapse;font-size:12px;white-space:nowrap}
+th,td{padding:12px 13px;border-bottom:1px solid var(--border);text-align:left}
+th{color:var(--muted);font-weight:600;background:var(--panel2);position:sticky;top:0}
+td{color:#dbe8f7}
+tbody tr:hover{background:#17273b}
+.empty{color:var(--muted);text-align:center;padding:35px 12px;font-size:12px}
+.report-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+.report-stat{padding:15px;background:var(--panel2);border-radius:10px}
+.report-stat strong{display:block;font-size:21px;margin-top:8px}
+.report-stat span{color:var(--muted);font-size:11px}
+footer{border-top:1px solid var(--border);padding:20px 0;color:var(--muted);font-size:11px;line-height:1.8}
+.small{font-size:11px;color:var(--muted);line-height:1.6}
+.hidden{display:none!important}
+body.light{
+  --bg:#f2f6fb;--panel:#fff;--panel2:#eaf0f8;--border:#d6e0ec;
+  --text:#172a42;--muted:#63758b;--shadow:0 8px 24px rgba(30,60,90,.06);
+}
+body.light .metric-value{color:#142942}
+body.light tbody tr:hover{background:#f0f5fb}
+body.light nav button.active{background:#e1edf9}
+body.light .upload-box{background:#f7faff}
+body.light .notice{background:#f5f8fd}
+@media(max-width:1000px){
+ .metrics{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .three,.report-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:650px){
+ .app{padding:14px}
+ h1{font-size:21px}
+ .metrics,.two,.three,.uploads,.chart-grid,.report-grid{grid-template-columns:1fr}
+ .metric-value{font-size:24px}
+ .chart-box{height:270px}
+ #map{height:300px}
+ header{align-items:flex-start}
+ .header-actions{width:100%}
+}
+@media print{
+ body{background:white;color:#111}
+ .app{max-width:none;padding:0}
+ header,nav,.uploads,.header-actions,.no-print,footer{display:none!important}
+ .panel,.metric{box-shadow:none;break-inside:avoid;border-color:#ccc}
+ .section{break-inside:avoid}
+ .metric-value,h2,h3,td{color:#111}
+ .metric-label,.section-desc,.small,.metric-foot{color:#555}
+ .chart-box{height:240px}
+ #map{height:250px}
+}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<header>
+  <div class="brand">
+    <div class="logo">G</div>
+    <div>
+      <h1>GNSS Analyser</h1>
+      <div class="subtitle">Positioning Intelligence · Navigation · Signal Quality</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <span class="status"><span class="dot"></span> LOCAL ANALYSIS</span>
+    <button id="themeBtn">☼ Theme</button>
+    <button id="demoBtn">Load Demo Data</button>
+    <button class="primary" id="reportBtn">Generate Report ↗</button>
+  </div>
+</header>
+
+<nav class="no-print" id="mainNav">
+  <button class="active" data-target="overview">Overview</button>
+  <button data-target="position">Position Analysis</button>
+  <button data-target="signals">Signal Analysis</button>
+  <button data-target="report">Analysis Report</button>
+</nav>
+
+<div id="message" class="notice">
+  Upload your GNSS position and signal CSV files to begin. Or load the demo dataset to explore the dashboard.
+</div>
+
+<section class="section" id="overview">
+  <div class="section-heading">
+    <div><h2>Performance Overview</h2><div class="section-desc">Summary of the currently loaded dataset</div></div>
+    <span class="tag" id="datasetTag">NO DATA LOADED</span>
+  </div>
+
+  <div class="grid metrics">
+    <div class="metric">
+      <span class="metric-icon">◎</span>
+      <div class="metric-label">Mean Horizontal Error</div>
+      <div class="metric-value" id="meanError">—</div>
+      <div class="metric-foot">Estimated versus reference</div>
+    </div>
+    <div class="metric">
+      <span class="metric-icon">⌖</span>
+      <div class="metric-label">95th Percentile Error</div>
+      <div class="metric-value" id="p95Error">—</div>
+      <div class="metric-foot">95% of valid fixes at or below</div>
+    </div>
+    <div class="metric">
+      <span class="metric-icon">◷</span>
+      <div class="metric-label">Valid Position Fixes</div>
+      <div class="metric-value" id="fixCount">0</div>
+      <div class="metric-foot" id="fixFoot">No position data</div>
+    </div>
+    <div class="metric">
+      <span class="metric-icon">◉</span>
+      <div class="metric-label">Average C/N₀</div>
+      <div class="metric-value" id="avgCn0">—</div>
+      <div class="metric-foot" id="signalFoot">No signal data</div>
+    </div>
+  </div>
+</section>
+
+<section class="section no-print" id="uploads">
+  <div class="section-heading">
+    <div><h2>Import GNSS Data</h2><div class="section-desc">CSV files are processed in your browser.</div></div>
+  </div>
+  <div class="grid uploads">
+    <div class="upload-box">
+      <h3>01 · Position Measurements</h3>
+      <p>Required columns: <code>timestamp, estimated_latitude, estimated_longitude, reference_latitude, reference_longitude</code></p>
+      <label for="positionFile">Position CSV</label>
+      <input type="file" id="positionFile" accept=".csv,text/csv">
+      <div class="actions"><button class="primary" id="loadPosition">Import Position Data</button><button id="downloadPositionTemplate">Get Template</button></div>
+    </div>
+    <div class="upload-box">
+      <h3>02 · Satellite Signal Measurements</h3>
+      <p>Required: <code>timestamp, satellite_id, cn0_dbhz</code>. Optional for the sky plot: <code>azimuth, elevation</code>. Optional constellation column: <code>constellation</code>.</p>
+      <label for="signalFile">Signal CSV</label>
+      <input type="file" id="signalFile" accept=".csv,text/csv">
+      <div class="actions"><button class="primary" id="loadSignal">Import Signal Data</button><button id="downloadSignalTemplate">Get Template</button></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="position">
+  <div class="section-heading">
+    <div><h2>Position Analysis</h2><div class="section-desc">Geographic track and horizontal positioning error</div></div>
+    <div class="actions no-print"><button id="exportErrors">Export Errors CSV</button></div>
+  </div>
+  <div class="grid two">
+    <div class="panel">
+      <div class="panel-top"><h3>Position Map</h3><span class="tag">OPENSTREETMAP</span></div>
+      <div id="map"></div>
+      <p class="small">Blue markers: estimated fixes. Green markers: reference fixes. Lines connect corresponding fixes. Map tiles require an internet connection.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Horizontal Error Over Time</h3><span class="tag">METRES</span></div>
+      <div class="chart-box tall"><canvas id="errorChart"></canvas></div>
+      <p class="small">Error is calculated as the great-circle distance between each estimated and reference coordinate.</p>
+    </div>
+  </div>
+  <div class="grid chart-grid" style="margin-top:16px">
+    <div class="panel">
+      <div class="panel-top"><h3>Latitude Error Over Time</h3><span class="tag">METRES</span></div>
+      <div class="chart-box"><canvas id="latChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Longitude Error Over Time</h3><span class="tag">METRES</span></div>
+      <div class="chart-box"><canvas id="lonChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Error Distribution</h3><span class="tag">FIX COUNT</span></div>
+      <div class="chart-box"><canvas id="histChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Accuracy Thresholds</h3><span class="tag">PERCENT OF FIXES</span></div>
+      <div class="chart-box"><canvas id="thresholdChart"></canvas></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-top"><h3>Position Measurements</h3><span class="tag" id="positionRows">0 ROWS</span></div>
+    <div class="table-wrap" id="positionTable"><div class="empty">Import position data to view measurements.</div></div>
+  </div>
+</section>
+
+<section class="section" id="signals">
+  <div class="section-heading">
+    <div><h2>Satellite Signal Analysis</h2><div class="section-desc">Signal strength and satellite geometry</div></div>
+    <div class="actions no-print"><button id="exportSignals">Export Signal CSV</button></div>
+  </div>
+  <div class="grid two">
+    <div class="panel">
+      <div class="panel-top"><h3>Satellite Sky Plot</h3><span class="tag">AZIMUTH / ELEVATION</span></div>
+      <canvas id="skyCanvas" aria-label="Satellite sky plot"></canvas>
+      <div id="skyMessage" class="small">Upload satellite azimuth and elevation to display the sky plot.</div>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>C/N₀ Over Time</h3><span class="tag">dB-Hz</span></div>
+      <div class="chart-box tall"><canvas id="cn0Chart"></canvas></div>
+      <p class="small">Signal strength varies with satellite, receiver, antenna, obstruction and environment.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Average C/N₀ by Satellite</h3><span class="tag">dB-Hz</span></div>
+      <div class="chart-box"><canvas id="satelliteChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-top"><h3>Constellation Distribution</h3><span class="tag">MEASUREMENTS</span></div>
+      <div class="chart-box"><canvas id="constellationChart"></canvas></div>
+    </div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <div class="panel-top"><h3>Signal Measurements</h3><span class="tag" id="signalRows">0 ROWS</span></div>
+    <div class="table-wrap" id="signalTable"><div class="empty">Import signal data to view measurements.</div></div>
+  </div>
+</section>
+
+<section class="section" id="report">
+  <div class="section-heading">
+    <div><h2>Automatic Analysis Report</h2><div class="section-desc">Summary generated from the imported measurements</div></div>
+    <div class="actions no-print">
+      <button class="primary" id="printReport">Print / Save as PDF</button>
+      <button id="downloadReport">Download Report TXT</button>
+      <button id="exportSummary">Export Summary CSV</button>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-top"><h3 id="reportTitle">GNSS Positioning Performance Report</h3><span class="tag" id="reportDate">NOT GENERATED</span></div>
+    <div id="reportContent"><div class="empty">Load data and select Generate Report to create your analysis.</div></div>
+  </div>
+</section>
+
+<footer>
+  GNSS Analyser · Browser-based analysis tool<br>
+  Position errors are computed against supplied reference coordinates. Reported accuracy depends on reference quality, coordinate validity, sampling, receiver and environment. This dashboard is not a certified survey instrument.
+</footer>
+</div>
+
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+let positions = [];
+let signals = [];
+let charts = {};
+let map = null;
+let mapLayers = [];
+let generatedReport = "";
+let generatedAt = "";
+
+const COLORS = {
+  cyan:"#43d9ee",blue:"#6798ff",green:"#45d6a0",
+  orange:"#ffb866",red:"#ff7185",purple:"#b39aff",
+  muted:"#91a5bd",grid:"rgba(145,165,189,.15)"
+};
+
+function showMessage(text,type="") {
+  const el=$("message");
+  el.textContent=text;
+  el.className="notice"+(type ? " "+type : "");
+}
+function number(v) {
+  if(v===null || v===undefined || String(v).trim()==="") return NaN;
+  return Number(v);
+}
+function normalize(s) {
+  return String(s??"").trim().toLowerCase()
+    .replace(/^\uFEFF/,"").replace(/[\s-]+/g,"_");
+}
+function firstValue(row,names) {
+  for(const name of names) {
+    const key=normalize(name);
+    if(Object.prototype.hasOwnProperty.call(row,key)) return row[key];
+  }
+  return "";
+}
+function parseCSV(text) {
+  const rows=[];
+  let row=[],field="",quoted=false;
+  text=text.replace(/^\uFEFF/,"");
+  for(let i=0;i<text.length;i++) {
+    const c=text[i];
+    if(c==='"') {
+      if(quoted && text[i+1]==='"'){field+='"';i++;}
+      else quoted=!quoted;
+    } else if(c==="," && !quoted) {
+      row.push(field);field="";
+    } else if((c==="\n" || c==="\r") && !quoted) {
+      if(c==="\r" && text[i+1]==="\n") i++;
+      row.push(field);
+      if(row.some(x=>x.trim()!=="")) rows.push(row);
+      row=[];field="";
+    } else field+=c;
+  }
+  if(field!=="" || row.length) {
+    row.push(field);
+    if(row.some(x=>x.trim()!=="")) rows.push(row);
+  }
+  if(rows.length<2) throw Error("CSV must contain a header row and at least one data row.");
+  const headers=rows[0].map(normalize);
+  if(headers.some(x=>!x)) throw Error("One or more CSV column headers are empty.");
+  return rows.slice(1).map(values=>{
+    const obj={};
+    headers.forEach((h,i)=>obj[h]=(values[i]??"").trim());
+    return obj;
+  });
+}
+function parseTimestamp(v) {
+  if(v===null || v===undefined || String(v).trim()==="") return null;
+  const n=Number(v);
+  // Unix seconds or milliseconds are supported.
+  if(Number.isFinite(n) && /^\d{10,13}$/.test(String(v).trim())) {
+    const d=new Date(String(v).trim().length===10?n*1000:n);
+    return Number.isNaN(d.getTime())?null:d;
+  }
+  const d=new Date(v);
+  return Number.isNaN(d.getTime())?null:d;
+}
+function dateLabel(v) {
+  if(!v) return "Unknown time";
+  return v.toLocaleString();
+}
+function fmt(n,d=2) {
+  return Number.isFinite(n) ? n.toLocaleString(undefined,{maximumFractionDigits:d,minimumFractionDigits:d}) : "—";
+}
+function median(values) {
+  if(!values.length) return NaN;
+  const a=[...values].sort((x,y)=>x-y);
+  const m=Math.floor(a.length/2);
+  return a.length%2?a[m]:(a[m-1]+a[m])/2;
+}
+function percentile(values,p) {
+  if(!values.length) return NaN;
+  const a=[...values].sort((x,y)=>x-y);
+  const pos=(a.length-1)*p;
+  const lo=Math.floor(pos),hi=Math.ceil(pos);
+  return a[lo]+(a[hi]-a[lo])*(pos-lo);
+}
+function mean(a) {return a.length?a.reduce((s,x)=>s+x,0)/a.length:NaN;}
+function rms(a) {return a.length?Math.sqrt(mean(a.map(x=>x*x))):NaN;}
+function distanceMeters(lat1,lon1,lat2,lon2) {
+  const rad=Math.PI/180,R=6371008.8;
+  const p1=lat1*rad,p2=lat2*rad;
+  const dp=(lat2-lat1)*rad,dl=(lon2-lon1)*rad;
+  const h=Math.sin(dp/2)**2+
+    Math.cos(p1)*Math.cos(p2)*Math.sin(dl/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+}
+function validCoord(lat,lon) {
+  return Number.isFinite(lat)&&Number.isFinite(lon)&&
+    lat>=-90&&lat<=90&&lon>=-180&&lon<=180;
+}
+function parsePositions(text) {
+  const rows=parseCSV(text);
+  const out=[];
+  let invalid=0;
+  for(const r of rows) {
+    const elat=number(firstValue(r,["estimated_latitude","estimated_lat","est_lat","latitude","lat"]));
+    const elon=number(firstValue(r,["estimated_longitude","estimated_lon","estimated_lng","est_lon","longitude","lon","lng"]));
+    const rlat=number(firstValue(r,["reference_latitude","reference_lat","ref_lat","true_latitude"]));
+    const rlon=number(firstValue(r,["reference_longitude","reference_lon","reference_lng","ref_lon","true_longitude"]));
+    const timestamp=parseTimestamp(firstValue(r,["timestamp","datetime","date_time","time","utc_time"]));
+    if(!validCoord(elat,elon)||!validCoord(rlat,rlon)) {invalid++;continue;}
+    const dLat=(elat-rlat)*111132;
+    const dLon=(elon-rlon)*111320*Math.cos(rlat*Math.PI/180);
+    out.push({
+      timestamp,elat,elon,rlat,rlon,
+      latError:dLat,lonError:dLon,
+      error:distanceMeters(elat,elon,rlat,rlon)
+    });
+  }
+  if(!out.length) throw Error("No valid position rows found. Check that the file has valid estimated and reference latitude/longitude columns.");
+  out.sort((a,b)=>(a.timestamp?.getTime()??0)-(b.timestamp?.getTime()??0));
+  out.invalid=invalid;
+  return out;
+}
+function parseSignals(text) {
+  const rows=parseCSV(text);
+  const out=[];
+  let invalid=0;
+  for(const r of rows) {
+    const sat=String(firstValue(r,["satellite_id","satellite","sv_id","prn","svid"])).trim();
+    const cn0=number(firstValue(r,["cn0_dbhz","cn0","c_n0","signal_strength","snr"]));
+    const timestamp=parseTimestamp(firstValue(r,["timestamp","datetime","date_time","time","utc_time"]));
+    const azText=firstValue(r,["azimuth","azimuth_deg","azimuth_degrees"]);
+    const elText=firstValue(r,["elevation","elevation_deg","elevation_degrees"]);
+    const az=azText===""?NaN:number(azText);
+    const el=elText===""?NaN:number(elText);
+    const constellation=String(firstValue(r,["constellation","gnss","system"])).trim()||"Unknown";
+    if(!sat||!Number.isFinite(cn0)||cn0<0||cn0>100) {invalid++;continue;}
+    out.push({timestamp,sat,cn0,az,el,constellation});
+  }
+  if(!out.length) throw Error("No valid signal rows found. Check satellite_id and cn0_dbhz columns.");
+  out.sort((a,b)=>(a.timestamp?.getTime()??0)-(b.timestamp?.getTime()??0));
+  out.invalid=invalid;
+  return out;
+}
+function readFile(input) {
+  return new Promise((resolve,reject)=>{
+    const file=input.files[0];
+    if(!file) return reject(Error("Choose a CSV file first."));
+    const reader=new FileReader();
+    reader.onload=()=>resolve(String(reader.result));
+    reader.onerror=()=>reject(Error("Could not read this file."));
+    reader.readAsText(file);
+  });
+}
+function destroyChart(id) {
+  if(charts[id]) {charts[id].destroy();delete charts[id];}
+}
+function chartDefaults() {
+  return {
+    responsive:true,maintainAspectRatio:false,
+    animation:{duration:250},
+    plugins:{
+      legend:{labels:{color:getComputedStyle(document.body).getPropertyValue("--muted").trim(),boxWidth:10,font:{size:10}}},
+      tooltip:{mode:"nearest",intersect:false}
+    },
+    scales:{
+      x:{ticks:{color:COLORS.muted,maxTicksLimit:8},grid:{color:COLORS.grid}},
+      y:{ticks:{color:COLORS.muted},grid:{color:COLORS.grid}}
+    }
+  };
+}
+function makeChart(id,type,data,options={}) {
+  destroyChart(id);
+  const canvas=$(id);
+  if(!canvas) return;
+  charts[id]=new Chart(canvas,{
+    type,data,
+    options:{...chartDefaults(),...options}
+  });
+}
+function lineDataset(label,points,color) {
+  return {
+    label,data:points,parsing:false,borderColor:color,
+    backgroundColor:color,pointRadius:2,pointHoverRadius:5,
+    borderWidth:2,tension:.15,spanGaps:true
+  };
+}
+function drawCharts() {
+  const sorted=positions.filter(p=>p.timestamp).sort((a,b)=>a.timestamp-b.timestamp);
+  const timeLabels=positions.map((p,i)=>p.timestamp?dateLabel(p.timestamp):"Fix "+(i+1));
+  const errorPoints=positions.map((p,i)=>({x:i+1,y:p.error}));
+  const timePoint=sorted.map(p=>({x:p.timestamp.getTime(),y:p.error}));
+  const latPoint=sorted.map(p=>({x:p.timestamp.getTime(),y:p.latError}));
+  const lonPoint=sorted.map(p=>({x:p.timestamp.getTime(),y:p.lonError}));
+  const useTime=sorted.length>=2;
+
+  makeChart("errorChart","line",{
+    datasets:[lineDataset("Horizontal error",useTime?timePoint:errorPoints,COLORS.cyan)]
+  },{
+    scales:{
+      x:{type:"linear",ticks:{color:COLORS.muted,maxTicksLimit:7,callback:v=>useTime?new Date(v).toLocaleTimeString():"Fix "+v},grid:{color:COLORS.grid}},
+      y:{title:{display:true,text:"Error (m)",color:COLORS.muted},beginAtZero:true,ticks:{color:COLORS.muted},grid:{color:COLORS.grid}}
+    }
+  });
+  makeChart("latChart","line",{datasets:[lineDataset("Latitude component",useTime?latPoint:positions.map((p,i)=>({x:i+1,y:p.latError})),COLORS.blue)]},{
+    scales:{x:{type:"linear",ticks:{color:COLORS.muted,maxTicksLimit:6,callback:v=>useTime?new Date(v).toLocaleTimeString():"Fix "+v},grid:{color:COLORS.grid}},y:{ticks:{color:COLORS.muted},grid:{color:COLORS.grid},title:{display:true,text:"Approx. metres",color:COLORS.muted}}}
+  });
+  makeChart("lonChart","line",{datasets:[lineDataset("Longitude component",useTime?lonPoint:positions.map((p,i)=>({x:i+1,y:p.lonError})),COLORS.purple)]},{
+    scales:{x:{type:"linear",ticks:{color:COLORS.muted,maxTicksLimit:6,callback:v=>useTime?new Date(v).toLocaleTimeString():"Fix "+v},grid:{color:COLORS.grid}},y:{ticks:{color:COLORS.muted},grid:{color:COLORS.grid},title:{display:true,text:"Approx. metres",color:COLORS.muted}}}
+  });
+
+  const errors=positions.map(p=>p.error);
+  const max=Math.max(...errors);
+  const step=max<=5?1:max<=20?2:Math.max(5,Math.ceil(max/10/5)*5);
+  const binCount=Math.min(12,Math.max(1,Math.ceil(max/step)+1));
+  const labels=Array.from({length:binCount},(_,i)=>{
+    const low=i*step,high=(i+1)*step;
+    return i===binCount-1?`${low}+ m`:`${low}–${high} m`;
+  });
+  const counts=labels.map((_,i)=>errors.filter(e=>{
+    const low=i*step,high=(i+1)*step;
+    return i===binCount-1?e>=low:e>=low&&e<high;
+  }).length);
+  makeChart("histChart","bar",{labels,datasets:[{label:"Fixes",data:counts,backgroundColor:COLORS.blue,borderRadius:4}]});
+
+  const thresholds=[1,3,5,10];
+  makeChart("thresholdChart","bar",{labels:thresholds.map(x=>`≤ ${x} m`),datasets:[{
+    label:"Fixes within threshold (%)",
+    data:thresholds.map(t=>100*errors.filter(e=>e<=t).length/errors.length),
+    backgroundColor:[COLORS.green,COLORS.cyan,COLORS.blue,COLORS.purple],borderRadius:5
+  }]},{scales:{x:{ticks:{color:COLORS.muted},grid:{display:false}},y:{min:0,max:100,ticks:{color:COLORS.muted,callback:v=>v+"%"},grid:{color:COLORS.grid}}}});
+
+  drawSignalCharts();
+}
+function drawSignalCharts() {
+  const known=signals.filter(s=>s.timestamp);
+  const timePoints=known.map(s=>({x:s.timestamp.getTime(),y:s.cn0}));
+  makeChart("cn0Chart","scatter",{datasets:[{
+    label:"C/N₀",data:timePoints.length?timePoints:signals.map((s,i)=>({x:i+1,y:s.cn0})),
+    backgroundColor:COLORS.cyan,pointRadius:3
+  }]},{scales:{x:{type:"linear",ticks:{color:COLORS.muted,maxTicksLimit:7,callback:v=>known.length?new Date(v).toLocaleTimeString():"Obs "+v},grid:{color:COLORS.grid}},y:{title:{display:true,text:"dB-Hz",color:COLORS.muted},ticks:{color:COLORS.muted},grid:{color:COLORS.grid}}}});
+
+  const groups={};
+  signals.forEach(s=>(groups[s.sat]??=[]).push(s.cn0));
+  const entries=Object.entries(groups).map(([sat,vals])=>[sat,mean(vals)]).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  makeChart("satelliteChart","bar",{labels:entries.map(x=>x[0]),datasets:[{label:"Mean C/N₀",data:entries.map(x=>x[1]),backgroundColor:COLORS.blue,borderRadius:4}]},{
+    indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{ticks:{color:COLORS.muted},grid:{color:COLORS.grid}},y:{ticks:{color:COLORS.muted},grid:{display:false}}}
+  });
+
+  const systems={};
+  signals.forEach(s=>systems[s.constellation]=(systems[s.constellation]||0)+1);
+  makeChart("constellationChart","doughnut",{labels:Object.keys(systems),datasets:[{data:Object.values(systems),backgroundColor:[COLORS.cyan,COLORS.blue,COLORS.green,COLORS.orange,COLORS.purple,COLORS.red],borderColor:getComputedStyle(document.body).getPropertyValue("--panel").trim(),borderWidth:3}]},{
+    plugins:{legend:{position:"bottom",labels:{color:COLORS.muted,padding:14,boxWidth:10}}}
+  });
+  drawSkyPlot();
+}
+function drawSkyPlot() {
+  const canvas=$("skyCanvas");
+  const rect=canvas.getBoundingClientRect();
+  const w=Math.max(280,rect.width||500),h=340,dpr=window.devicePixelRatio||1;
+  canvas.width=w*dpr;canvas.height=h*dpr;
+  canvas.style.height=h+"px";
+  const ctx=canvas.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,w,h);
+
+  const css=getComputedStyle(document.body);
+  const panel=css.getPropertyValue("--panel").trim();
+  const muted=css.getPropertyValue("--muted").trim();
+  const border=css.getPropertyValue("--border").trim();
+  const text=css.getPropertyValue("--text").trim();
+  const cx=w/2,cy=h/2+5,r=Math.min(w*.38,135);
+
+  ctx.strokeStyle=border;ctx.lineWidth=1;
+  [1,.75,.5,.25].forEach(f=>{
+    ctx.beginPath();ctx.arc(cx,cy,r*f,0,Math.PI*2);ctx.stroke();
+    ctx.fillStyle=muted;ctx.font="10px Arial";
+    if(f<1)ctx.fillText(String(Math.round(90*(1-f)))+"°",cx+4,cy-r*f+12);
+  });
+  ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx+r,cy);ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
+  ctx.fillStyle=muted;ctx.font="11px Arial";ctx.textAlign="center";
+  ctx.fillText("N",cx,cy-r-9);ctx.fillText("S",cx,cy+r+15);
+  ctx.fillText("W",cx-r-12,cy+4);ctx.fillText("E",cx+r+12,cy+4);
+
+  const valid=signals.filter(s=>Number.isFinite(s.az)&&Number.isFinite(s.el)&&s.az>=0&&s.az<=360&&s.el>=0&&s.el<=90);
+  if(!valid.length) {
+    $("skyMessage").textContent="Sky plot unavailable: add valid azimuth (0–360°) and elevation (0–90°) columns to the signal CSV.";
+    return;
+  }
+  $("skyMessage").textContent=`Showing ${valid.length} measurements with valid azimuth and elevation. Points are not necessarily simultaneous; timestamps may represent different observation epochs.`;
+  const latestBySat={};
+  valid.forEach(s=>{
+    const key=s.sat;
+    if(!latestBySat[key]||((s.timestamp?.getTime()??0)>(latestBySat[key].timestamp?.getTime()??0))) latestBySat[key]=s;
+  });
+  Object.values(latestBySat).forEach(s=>{
+    const a=s.az*Math.PI/180;
+    const rr=r*(90-s.el)/90;
+    const x=cx+rr*Math.sin(a),y=cy-rr*Math.cos(a);
+    ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);
+    ctx.fillStyle=s.cn0>=35?COLORS.green:s.cn0>=25?COLORS.cyan:COLORS.orange;
+    ctx.fill();ctx.strokeStyle=panel;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=text;ctx.font="10px Arial";ctx.textAlign="left";
+    ctx.fillText(s.sat,x+7,y-6);
+  });
+}
+function updateMetrics() {
+  const errors=positions.map(p=>p.error);
+  $("meanError").textContent=errors.length?fmt(mean(errors))+" m":"—";
+  $("p95Error").textContent=errors.length?fmt(percentile(errors,.95))+" m":"—";
+  $("fixCount").textContent=positions.length.toLocaleString();
+  $("fixFoot").textContent=positions.length?`${positions.filter(p=>p.timestamp).length} with timestamps`:"No position data";
+  $("avgCn0").textContent=signals.length?fmt(mean(signals.map(s=>s.cn0))):"—";
+  $("signalFoot").textContent=signals.length?`${signals.length} observations · ${new Set(signals.map(s=>s.sat)).size} satellite IDs`:"No signal data";
+  $("datasetTag").textContent=`${positions.length} FIXES · ${signals.length} SIGNAL ROWS`;
+}
+function renderTable(container,headers,rows) {
+  if(!rows.length){$(container).innerHTML='<div class="empty">No valid data to display.</div>';return;}
+  const thead="<thead><tr>"+headers.map(h=>`<th>${escapeHTML(h)}</th>`).join("")+"</tr></thead>";
+  const tbody="<tbody>"+rows.slice(0,1000).map(row=>"<tr>"+row.map(v=>`<td>${escapeHTML(String(v??""))}</td>`).join("")+"</tr>").join("")+"</tbody>";
+  $(container).innerHTML=`<table>${thead}${tbody}</table>`;
+  if(rows.length>1000) $(container).insertAdjacentHTML("beforeend",'<p class="small">Showing first 1,000 of '+rows.length+' rows.</p>');
+}
+function escapeHTML(v) {
+  return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function renderTables() {
+  renderTable("positionTable",
+    ["Timestamp","Estimated Lat","Estimated Lon","Reference Lat","Reference Lon","Lat Error (m)","Lon Error (m)","Horizontal Error (m)"],
+    positions.map(p=>[dateLabel(p.timestamp),p.elat,p.elon,p.rlat,p.rlon,fmt(p.latError),fmt(p.lonError),fmt(p.error)]));
+  renderTable("signalTable",
+    ["Timestamp","Satellite","Constellation","C/N₀ (dB-Hz)","Azimuth (°)","Elevation (°)"],
+    signals.map(s=>[dateLabel(s.timestamp),s.sat,s.constellation,fmt(s.cn0),Number.isFinite(s.az)?fmt(s.az):"—",Number.isFinite(s.el)?fmt(s.el):"—"]));
+  $("positionRows").textContent=positions.length+" ROWS";
+  $("signalRows").textContent=signals.length+" ROWS";
+}
+function initMap() {
+  if(map) return;
+  if(!window.L) {
+    $("map").innerHTML='<div class="empty">Map library could not load. Check your internet connection.</div>';
+    return;
+  }
+  map=L.map("map");
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+    attribution:"&copy; OpenStreetMap contributors",maxZoom:19
+  }).addTo(map);
+  map.setView([31.6223,74.8753],13);
+}
+function renderMap() {
+  initMap();
+  if(!map) return;
+  mapLayers.forEach(layer=>map.removeLayer(layer));mapLayers=[];
+  const all=[];
+  positions.forEach(p=>{
+    const a=[p.elat,p.elon],b=[p.rlat,p.rlon];
+    const line=L.polyline([a,b],{color:COLORS.orange,weight:1,opacity:.7}).addTo(map);
+    const est=L.circleMarker(a,{radius:4,color:COLORS.blue,fillColor:COLORS.blue,fillOpacity:.9})
+      .bindPopup("Estimated fix<br>"+p.elat+", "+p.elon+"<br>Error: "+fmt(p.error)+" m").addTo(map);
+    const ref=L.circleMarker(b,{radius:4,color:COLORS.green,fillColor:COLORS.green,fillOpacity:.9})
+      .bindPopup("Reference fix<br>"+p.rlat+", "+p.rlon).addTo(map);
+    mapLayers.push(line,est,ref);all.push(a,b);
+  });
+  if(all.length) map.fitBounds(all,{padding:[25,25],maxZoom:17});
+  setTimeout(()=>map.invalidateSize(),100);
+}
+function renderAll() {
+  updateMetrics();drawCharts();renderTables();renderMap();generateReport();
+}
+function reportStats() {
+  const e=positions.map(p=>p.error);
+  const absLat=positions.map(p=>Math.abs(p.latError));
+  const absLon=positions.map(p=>Math.abs(p.lonError));
+  const validTime=positions.filter(p=>p.timestamp);
+  const duration=validTime.length>1?(validTime[validTime.length-1].timestamp-validTime[0].timestamp)/1000:NaN;
+  const threshold=t=>e.length?100*e.filter(x=>x<=t).length/e.length:NaN;
+  const moving=[];
+  const win=Math.min(5,e.length);
+  for(let i=0;i<e.length;i++) moving.push(mean(e.slice(Math.max(0,i-win+1),i+1)));
+  return {
+    count:e.length,mean:mean(e),median:median(e),rms:rms(e),
+    p95:percentile(e,.95),max:Math.max(...e),min:Math.min(...e),
+    cep50:percentile(e,.5),latRms:rms(absLat),lonRms:rms(absLon),
+    within1:threshold(1),within3:threshold(3),within5:threshold(5),within10:threshold(10),
+    timeCount:validTime.length,duration,
+    start:validTime[0]?.timestamp,end:validTime[validTime.length-1]?.timestamp,
+    invalid:positions.invalid||0,signalCount:signals.length,
+    avgCn0:signals.length?mean(signals.map(s=>s.cn0)):NaN,
+    satelliteCount:new Set(signals.map(s=>s.sat)).size,
+    skyCount:signals.filter(s=>Number.isFinite(s.az)&&Number.isFinite(s.el)&&s.az>=0&&s.az<=360&&s.el>=0&&s.el<=90).length,
+    moving
+  };
+}
+function generateReport() {
+  const s=reportStats();
+  generatedAt=new Date().toLocaleString();
+  $("reportDate").textContent="UPDATED "+generatedAt;
+  const stats=[
+    ["Valid position fixes",s.count],
+    ["Mean horizontal error",Number.isFinite(s.mean)?fmt(s.mean)+" m":"—"],
+    ["Horizontal RMS error",Number.isFinite(s.rms)?fmt(s.rms)+" m":"—"],
+    ["Median error / CEP50",Number.isFinite(s.cep50)?fmt(s.cep50)+" m":"—"],
+    ["95th-percentile error",Number.isFinite(s.p95)?fmt(s.p95)+" m":"—"],
+    ["Maximum horizontal error",Number.isFinite(s.max)?fmt(s.max)+" m":"—"],
+    ["Latitude component RMS",Number.isFinite(s.latRms)?fmt(s.latRms)+" m":"—"],
+    ["Longitude component RMS",Number.isFinite(s.lonRms)?fmt(s.lonRms)+" m":"—"],
+    ["Fixes within 1 metre",Number.isFinite(s.within1)?fmt(s.within1)+"%":"—"],
+    ["Fixes within 5 metres",Number.isFinite(s.within5)?fmt(s.within5)+"%":"—"],
+    ["Fixes within 10 metres",Number.isFinite(s.within10)?fmt(s.within10)+"%":"—"],
+    ["Signal observations",s.signalCount],
+    ["Distinct satellite IDs",s.satelliteCount],
+    ["Average C/N₀",Number.isFinite(s.avgCn0)?fmt(s.avgCn0)+" dB-Hz":"—"],
+    ["Sky-plot measurements",s.skyCount],
+    ["Rows rejected during position import",s.invalid]
+  ];
+  const range=s.start&&s.end?`${dateLabel(s.start)} to ${dateLabel(s.end)}`:"Timestamp range unavailable";
+  const duration=Number.isFinite(s.duration)?`${fmt(s.duration/60)} minutes`:"Unavailable";
+  const notes=[];
+  if(!positions.length) notes.push("No position measurements have been imported.");
+  if(positions.length&&!s.timeCount) notes.push("Position timestamps are missing or could not be parsed; time-based analysis may be limited.");
+  if(positions.length&&s.timeCount<positions.length) notes.push(`${positions.length-s.timeCount} position rows have no valid timestamp.`);
+  if(positions.invalid) notes.push(`${positions.invalid} invalid position rows were excluded.`);
+  if(signals.length&&!s.skyCount) notes.push("Satellite sky plot unavailable because no valid azimuth/elevation measurements were supplied.");
+  if(signals.length&&signals.some(x=>x.constellation==="Unknown")) notes.push("Some signal rows have no constellation label; they are grouped as Unknown.");
+  if(!signals.length) notes.push("No satellite signal data has been imported.");
+  if(positions.length) notes.push("Position accuracy metrics are relative to the reference coordinates supplied in the CSV.");
+
+  const statHtml=stats.map(([label,value])=>`<div class="report-stat"><span>${escapeHTML(label)}</span><strong>${escapeHTML(String(value))}</strong></div>`).join("");
+  const notesHtml=notes.length?notes.map(n=>`<li>${escapeHTML(n)}</li>`).join(""):"<li>No automatic data-quality warnings detected.</li>";
+  $("reportContent").innerHTML=`
+    <div class="notice">Generated: ${escapeHTML(generatedAt)}<br>Position observation period: ${escapeHTML(range)}<br>Approximate observation duration: ${escapeHTML(duration)}</div>
+    <div class="grid report-grid">${statHtml}</div>
+    <div style="margin-top:20px"><h3>Data Quality and Interpretation</h3><ul style="line-height:1.9;color:var(--muted)">${notesHtml}</ul></div>
+    <div style="margin-top:20px"><h3>Methodology</h3><p class="small">Horizontal position error is calculated using great-circle distance (Haversine formula) between each estimated coordinate and its paired reference coordinate. Horizontal RMS is the root mean square of the horizontal distance errors. The 95th percentile is computed using linear interpolation of the sorted error values. Latitude and longitude component errors are approximate local north/east components. Percentages within thresholds describe this dataset only.</p></div>
+    <div style="margin-top:20px"><h3>Conclusion</h3><p class="small">${escapeHTML(conclusionText(s))}</p></div>`;
+  generatedReport=buildPlainReport(s,stats,notes,range,duration);
+}
+function conclusionText(s) {
+  if(!s.count) return "Import valid estimated and reference coordinates to assess positioning performance.";
+  let sentence=`The dataset contains ${s.count} valid paired position fixes. Mean horizontal error is ${fmt(s.mean)} m, and the 95th-percentile error is ${fmt(s.p95)} m. `;
+  if(s.signalCount) sentence+=`The signal dataset contains ${s.signalCount} observations from ${s.satelliteCount} distinct satellite IDs, with average C/N₀ of ${fmt(s.avgCn0)} dB-Hz. `;
+  sentence+="Interpret results in the context of reference-coordinate quality, receiver setup, environment, and sampling interval.";
+  return sentence;
+}
+function buildPlainReport(s,stats,notes,range,duration) {
+  return [
+    "GNSS POSITIONING PERFORMANCE REPORT",
+    "Generated: "+generatedAt,
+    "Position observation period: "+range,
+    "Approximate duration: "+duration,
+    "",
+    "STATISTICS",
+    ...stats.map(([a,b])=>a+": "+b),
+    "",
+    "DATA QUALITY NOTES",
+    ...(notes.length?notes.map(n=>"- "+n):["- No automatic data-quality warnings detected."]),
+    "",
+    "METHODOLOGY",
+    "Horizontal position error uses great-circle distance (Haversine formula) between paired estimated and reference coordinates.",
+    "Horizontal RMS is the root mean square of horizontal distance errors.",
+    "The 95th percentile is computed using linear interpolation of sorted error values.",
+    "Latitude and longitude component errors are approximate local north/east components.",
+    "",
+    "CONCLUSION",
+    conclusionText(s),
+    "",
+    "Note: Results depend on the quality of the supplied reference coordinates and measurement data."
+  ].join("\n");
+}
+function downloadFile(name,content,type="text/plain;charset=utf-8") {
+  const blob=new Blob([content],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=url;a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function csvEscape(v) {
+  const s=String(v??"");
+  return /[",\r\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;
+}
+function toCSV(headers,rows) {
+  return [headers,...rows].map(r=>r.map(csvEscape).join(",")).join("\r\n");
+}
+function exportPositionErrors() {
+  if(!positions.length) return showMessage("Import position data before exporting errors.","error");
+  const rows=positions.map(p=>[p.timestamp?.toISOString()||"",p.elat,p.elon,p.rlat,p.rlon,p.latError,p.lonError,p.error]);
+  downloadFile("gnss_position_errors.csv",toCSV(["timestamp","estimated_latitude","estimated_longitude","reference_latitude","reference_longitude","latitude_error_m_approx","longitude_error_m_approx","horizontal_error_m"],rows),"text/csv;charset=utf-8");
+}
+function exportSignalData() {
+  if(!signals.length) return showMessage("Import signal data before exporting.","error");
+  downloadFile("gnss_signal_data.csv",toCSV(["timestamp","satellite_id","constellation","cn0_dbhz","azimuth","elevation"],signals.map(s=>[s.timestamp?.toISOString()||"",s.sat,s.constellation,s.cn0,Number.isFinite(s.az)?s.az:"",Number.isFinite(s.el)?s.el:""])),"text/csv;charset=utf-8");
+}
+function exportSummary() {
+  const s=reportStats();
+  const entries=Object.entries(s).filter(([k,v])=>!["moving","start","end"].includes(k));
+  downloadFile("gnss_analysis_summary.csv",toCSV(["metric","value"],entries.map(([k,v])=>[k,typeof v==="number"?v:(v??"")])),"text/csv;charset=utf-8");
+}
+async function importPositions() {
+  try {
+    const text=await readFile($("positionFile"));
+    const parsed=parsePositions(text);
+    positions=parsed;
+    renderAll();
+    showMessage(`Imported ${positions.length} valid position fixes. ${positions.invalid} invalid rows were skipped.`,positions.invalid?"":"success");
+  } catch(e) {showMessage(e.message||"Could not import position CSV.","error");}
+}
+async function importSignals() {
+  try {
+    const text=await readFile($("signalFile"));
+    const parsed=parseSignals(text);
+    signals=parsed;
+    renderAll();
+    showMessage(`Imported ${signals.length} valid signal observations. ${signals.invalid} invalid rows were skipped.`,signals.invalid?"":"success");
+  } catch(e) {showMessage(e.message||"Could not import signal CSV.","error");}
+}
+function loadDemo() {
+  const base=new Date();
+  positions=Array.from({length:40},(_,i)=>{
+    const t=new Date(base.getTime()-(39-i)*5000);
+    const rlat=31.6223+i*.000015;
+    const rlon=74.8753+i*.000012;
+    const elat=rlat+(.000012*Math.sin(i*.8))+.000004;
+    const elon=rlon+(.000014*Math.cos(i*.45))-.000003;
+    return {timestamp:t,elat,elon,rlat,rlon,
+      latError:(elat-rlat)*111132,
+      lonError:(elon-rlon)*111320*Math.cos(rlat*Math.PI/180),
+      error:distanceMeters(elat,elon,rlat,rlon)};
+  });
+  positions.invalid=0;
+  const sats=["G01","G03","G08","G11","G17","E02","E07","E19","R05","C12"];
+  signals=[];
+  for(let i=0;i<160;i++) {
+    const sat=sats[i%sats.length];
+    const az=(i*47)%360;
+    const el=10+((i*19)%78);
+    signals.push({
+      timestamp:new Date(base.getTime()-(159-i)*1000),
+      sat,cn0:24+((i*13)%18)+Math.sin(i)*2,
+      az,el,
+      constellation:sat[0]==="G"?"GPS":sat[0]==="E"?"Galileo":sat[0]==="R"?"GLONASS":"BeiDou"
+    });
+  }
+  renderAll();
+  showMessage("Demo data loaded. These are synthetic example measurements, not real GNSS observations.","success");
+}
+function templatePosition() {
+  downloadFile("position_template.csv",
+    "timestamp,estimated_latitude,estimated_longitude,reference_latitude,reference_longitude\n2026-10-14T10:00:00Z,31.62231,74.87531,31.62230,74.87530\n2026-10-14T10:00:05Z,31.62234,74.87529,31.62232,74.87531\n","text/csv;charset=utf-8");
+}
+function templateSignal() {
+  downloadFile("signal_template.csv",
+    "timestamp,satellite_id,cn0_dbhz,constellation,azimuth,elevation\n2026-10-14T10:00:00Z,G01,38.5,GPS,45,55\n2026-10-14T10:00:01Z,G03,32.2,GPS,130,35\n2026-10-14T10:00:02Z,E02,41.1,Galileo,245,62\n","text/csv;charset=utf-8");
+}
+$("loadPosition").addEventListener("click",importPositions);
+$("loadSignal").addEventListener("click",importSignals);
+$("demoBtn").addEventListener("click",loadDemo);
+$("exportErrors").addEventListener("click",exportPositionErrors);
+$("exportSignals").addEventListener("click",exportSignalData);
+$("exportSummary").addEventListener("click",exportSummary);
+$("downloadReport").addEventListener("click",()=>{
+  if(!generatedReport) generateReport();
+  downloadFile("gnss_analysis_report.txt",generatedReport);
+});
+$("printReport").addEventListener("click",()=>{
+  generateReport();
+  window.print();
+});
+$("reportBtn").addEventListener("click",()=>{
+  generateReport();
+  document.querySelector("#report").scrollIntoView({behavior:"smooth"});
+  showMessage("Analysis report updated from the currently loaded dataset.","success");
+});
+$("downloadPositionTemplate").addEventListener("click",templatePosition);
+$("downloadSignalTemplate").addEventListener("click",templateSignal);
+$("themeBtn").addEventListener("click",()=>{
+  document.body.classList.toggle("light");
+  $("themeBtn").textContent=document.body.classList.contains("light")?"☾ Dark Theme":"☼ Theme";
+  Object.values(charts).forEach(c=>c.options.plugins.legend.labels.color=getComputedStyle(document.body).getPropertyValue("--muted").trim());
+  Object.values(charts).forEach(c=>c.update());
+  drawSkyPlot();
+});
+$("mainNav").addEventListener("click",e=>{
+  const b=e.target.closest("button[data-target]");
+  if(!b)return;
+  document.querySelectorAll("#mainNav button").forEach(x=>x.classList.toggle("active",x===b));
+  $(b.dataset.target).scrollIntoView({behavior:"smooth"});
+  if(b.dataset.target==="signals") setTimeout(()=>{if(map)map.invalidateSize();drawSkyPlot();},150);
+});
+window.addEventListener("resize",()=>{
+  clearTimeout(window.__gnssResize);
+  window.__gnssResize=setTimeout(drawSkyPlot,150);
+});
+
+renderAll();
+</script>
+</body>
+</html>
